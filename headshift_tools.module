@@ -1,0 +1,176 @@
+<?php
+
+function headshift_tools_create_edit_link($node)
+{
+	$type = $node->type;
+  global $user;
+  //dsm($node);
+  if (user_access("edit any $type content") 
+      || (user_access("edit own $type content") && $user->uid == $node->uid)
+      || user_access('administer nodes'))
+  {
+    return "<span class='edit'>" . l('edit', "node/" . $node->nid . "/edit", array('query' => "destination=node/". $node->nid)) . "</span>";
+  }
+}
+
+function headshift_tools_create_delete_link($node)
+{
+	$type = $node->type;
+  global $user;
+  //dsm($node);
+  if (user_access("edit any $type content") 
+      || (user_access("edit own $type content") && $user->uid == $node->uid)
+      || user_access('administer nodes'))
+  {
+    return "<span class='delete'>" . l('delete', "node/" . $node->nid . "/delete") . "</span>";
+  }
+}
+
+function headshift_tools_get_tid($vocabulary_name, $term_name)
+{
+  $trimmed_term_name = trim($term_name);
+  $term_rows = headshift_tools_get_taxonomy_term($vocabulary_name, $trimmed_term_name);
+
+  if($term_rows[0]->tid) {
+      return $term_rows[0]->tid;
+  }
+}
+
+function headshift_tools_get_or_create_tid($vocabulary_name, $term_name)
+{
+  $trimmed_term_name = trim($term_name);
+  $term_rows = headshift_tools_get_taxonomy_term($vocabulary_name, $trimmed_term_name);
+
+  if($term_rows === false) {
+    //No term was found, create it
+    $vid = headshift_tools_get_vid($vocabulary_name);
+    if ($vid) {
+        $edit = array('vid'=>$vid, 'name'=>$trimmed_term_name);
+        taxonomy_save_term($edit);
+        $term = headshift_tools_get_taxonomy_term($vocabulary_name, $trimmed_term_name);
+    }
+  }
+
+  if($term_rows[0]->tid) {
+      return $term_rows[0]->tid;
+  }
+}
+
+
+function headshift_tools_get_vid($vocabulary) {
+    $vid = db_result(db_query('SELECT v.vid
+                FROM vocabulary v
+                WHERE LOWER( v.name ) = "%s"', strtolower($vocabulary)));
+    if(!$vid)
+        return false;
+    return $vid;
+}
+
+function headshift_tools_get_taxonomy_term($vocabulary_name, $term_name) {
+    $db_result = db_query('SELECT t.tid, t . *
+                FROM term_data t
+                LEFT JOIN vocabulary v ON v.vid = t.vid
+                WHERE LOWER( v.name ) = "%s"
+                AND LOWER( t.name ) = "%s"', strtolower($vocabulary_name),strtolower($term_name));
+
+    $result = array();
+    while ($term = db_fetch_object($db_result)) {
+        $result[] = $term;
+    }
+    if(count($result)==0)
+        return false;
+
+    return $result;
+}
+
+
+function headshift_tools_terms_to_tids($vocabulary_name, $terms)
+{
+  $tids = array();
+  if($terms) {
+      $terms_array = explode(",", $terms);
+      foreach($terms_array as $term) {
+        $tids[] = headshift_tools_get_or_create_tid($vocabulary_name, $term);
+      }
+  }
+  return $tids;
+}
+
+function headshift_tools_theme_user_picture_with_size($account, $size) {
+    // set the correct preset
+    $preset = imagecache_preset_by_name($size);
+    $account->imagecache_preset = $preset['presetid'];
+    return theme('user_picture', $account);
+}
+
+
+/**
+ *
+ * @flatten multi-dimensional array
+ * This method was taken from http://www.phpro.org/examples/Flatten-Array.html
+ * A less efficient but simpler method is used in content_array_flatten
+ * 
+ * @param array $array
+ *
+ * @return array
+ *
+ */
+function headshift_tools_flatten_array(array $array){
+  $ret_array = array();
+  foreach(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)) as $value)
+   {
+     $ret_array[] = $value;
+   }
+  return $ret_array;
+}
+
+// TODO - rename the following functions to start with headshift_tools
+
+function str_replace_assoc($array,$string) {
+    $from_array = array();
+    $to_array = array();
+
+    foreach ($array as $k => $v) {
+        $from_array[] = $k;
+        $to_array[] = $v;
+    }
+
+    return str_replace($from_array,$to_array,$string);
+}
+
+function innodev_time_created_ago($nid)
+{
+  $node = node_load($nid);
+  return theme_date_time_ago(
+          date_create(date('Y-m-d', $node->created)),
+          date_create(date('Y-m-d')));
+}
+
+function innodev_current_user_in_role($role) {
+  global $user;
+  return in_array($role, array_values($user->roles));
+}
+
+function innodev_user_in_role($uid, $role) {
+    $user_to_check = user_load(array('uid' => $uid));
+    return in_array($role, array_values($user_to_check->roles));
+    //echo $user_to_check->username . ($is_in_role ? "is" : "is not") . " a " . $role ;
+}
+
+
+/**
+ * Returns the action for the current page. i.e. "view", "add", "edit" or "delete"
+ */
+function headshift_tools_get_page_action() {
+  $args = arg();
+
+  if ($args[0]=="node" && ($args[2]=="edit" || $args[2]=="delete")) {
+    return $args[2];
+  }
+  
+  if ($args[0]=="node" && $args[1]=="add") {
+    return "add";
+  }
+
+  return "view";
+}

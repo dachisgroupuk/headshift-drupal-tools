@@ -1,0 +1,6 @@
+; $Id$
+name = Headshift Tools
+description = Various helper functions used in Headshift projects
+package = Headshift
+version = 1.0
+core = 6.x
