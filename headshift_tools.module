@@ -174,3 +174,8 @@ function headshift_tools_get_page_action() {
 
   return "view";
 }
+
+function headshift_tools_get_clean_args() {
+  $url = drupal_get_path_alias($_GET['q']);
+  return explode("/", $url);
+}
