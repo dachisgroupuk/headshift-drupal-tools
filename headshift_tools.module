@@ -179,3 +179,8 @@ function headshift_tools_get_clean_args() {
   $url = drupal_get_path_alias($_GET['q']);
   return explode("/", $url);
 }
+
+function headshift_tools_cssify($item) {
+  //TODO - implement this function properly..
+  return str_replace('_', '-', $item);
+}
