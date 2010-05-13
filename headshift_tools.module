@@ -184,3 +184,55 @@ function headshift_tools_cssify($item) {
   //TODO - implement this function properly..
   return str_replace('_', '-', $item);
 }
+
+function headshift_tools_body_label($node) {
+  return $node->content['#content_extra_fields']['body_field']['label'];
+}
+
+function headshift_tools_cck_title($node, $field_name) {
+  return $node->content[$field_name]['field']['#title'];
+}
+
+/**
+ * Implementation of hook_theme().
+ */
+function headshift_tools_theme() {
+  return array(
+    'cck_item_list' => array(
+      'arguments' => array('field' => NULL),
+    ),
+    'tag_item_list' => array(
+      'arguments' => array('tags' => NULL),
+    ),
+  );
+}
+
+function theme_cck_item_list($field) {
+  // Convert the CCK field structure into one suitable for theme('item_list')
+  $items = array();
+  foreach($field as $field_item)
+  {
+    if ($field_item['view']) { $items[] = $field_item['view']; }
+  }
+  return theme('item_list', $items);
+}
+
+function headshift_tools_group_taxonomy_by_vid($taxonomy) {
+  $grouped_tags = array();
+  foreach ($taxonomy as $term)
+  {
+    $grouped_tags[$term->vid][] = $term;
+  }
+  return $grouped_tags;
+}
+
+function theme_tag_item_list($tags) {
+  // Convert the tag structure into one suitable for theme('item_list')
+  $items = array();
+  foreach($tags as $tag)
+  {
+    $items[] = $tag->name;
+  }
+  return theme('item_list', $items);
+}
+
