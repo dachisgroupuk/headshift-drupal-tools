@@ -141,7 +141,7 @@ function str_replace_assoc($array,$string) {
     return str_replace($from_array,$to_array,$string);
 }
 
-function innodev_time_created_ago($nid)
+function headshift_tools_time_created_ago($nid)
 {
   $node = node_load($nid);
   return theme_date_time_ago(
@@ -149,12 +149,12 @@ function innodev_time_created_ago($nid)
           date_create(date('Y-m-d')));
 }
 
-function innodev_current_user_in_role($role) {
+function headshift_tools_current_user_in_role($role) {
   global $user;
   return in_array($role, array_values($user->roles));
 }
 
-function innodev_user_in_role($uid, $role) {
+function headshift_tools_user_in_role($uid, $role) {
     $user_to_check = user_load(array('uid' => $uid));
     return in_array($role, array_values($user_to_check->roles));
     //echo $user_to_check->username . ($is_in_role ? "is" : "is not") . " a " . $role ;
