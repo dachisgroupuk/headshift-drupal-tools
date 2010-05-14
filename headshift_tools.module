@@ -88,10 +88,13 @@ function headshift_tools_terms_to_tids($vocabulary_name, $terms)
 {
   $tids = array();
   if($terms) {
-      $terms_array = explode(",", $terms);
-      foreach($terms_array as $term) {
-        $tids[] = headshift_tools_get_or_create_tid($vocabulary_name, $term);
-      }
+    if (!is_array($terms))
+    {
+      $terms = explode(",", $terms);
+    }
+    foreach($terms as $term) {
+      $tids[] = headshift_tools_get_or_create_tid($vocabulary_name, $term);
+    }
   }
   return $tids;
 }
