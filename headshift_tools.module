@@ -229,6 +229,17 @@ function headshift_tools_group_taxonomy_by_vid($taxonomy) {
   return $grouped_tags;
 }
 
+function headshift_tools_get_terms_in_vid($node, $vid) {
+  $terms_in_vid = array();
+  foreach ($node->taxonomy as $term)
+  {
+    if ($term->vid == $vid) {
+      $terms_in_vid[] = $term->tid;
+    }
+  }
+  return $terms_in_vid;
+}
+
 function theme_tag_item_list($tags) {
   // Convert the tag structure into one suitable for theme('item_list')
   $items = array();
@@ -237,5 +248,14 @@ function theme_tag_item_list($tags) {
     $items[] = $tag->name;
   }
   return theme('item_list', $items);
+}
+
+
+function headshift_tools_get_node_from_path($alias) {
+  $internal_path = drupal_get_normal_path($alias);
+  $path_parts = explode("/", $internal_path);
+  if ($path_parts[0] == "node" && sizeof($path_parts == 2)) {
+    return node_load($path_parts[1]);
+  }
 }
 
