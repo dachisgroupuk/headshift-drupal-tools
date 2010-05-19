@@ -229,12 +229,28 @@ function headshift_tools_group_taxonomy_by_vid($taxonomy) {
   return $grouped_tags;
 }
 
+/**
+ * Takes a node, and returns all the terms in a given vocabulary
+ * The format of the $taxonomy array can vary depending on the state of the node.
+ * If the node is just being created, then it may just be an array of tids.
+ * In this situation, lookups will be required to determine which tids are in the given vocabulary
+ * If the node already exists, then most likely it is an array of term objects, in which
+ * case no lookups are required
+ *
+ * Note that this method supports non-created nodes, whilst the taxonomy_node_get_terms_by_vocabulary() 
+ * method does not.
+ */
 function headshift_tools_get_terms_in_vid($node, $vid) {
   $terms_in_vid = array();
   foreach ($node->taxonomy as $term)
   {
+    if (!is_object($term))
+    {
+      // We just have a term id, get the object
+      $term = taxonomy_get_term($term);
+    }
     if ($term->vid == $vid) {
-      $terms_in_vid[] = $term->tid;
+      $terms_in_vid[] = $term;
     }
   }
   return $terms_in_vid;
@@ -250,6 +266,12 @@ function theme_tag_item_list($tags) {
   return theme('item_list', $items);
 }
 
+function headshift_tools_get_current_node() {
+  $path_parts = arg();
+  if ($path_parts[0] == "node" && is_numeric($path_parts[1]) && sizeof($path_parts == 2)) {
+    return node_load($path_parts[1]);
+  }
+}
 
 function headshift_tools_get_node_from_path($alias) {
   $internal_path = drupal_get_normal_path($alias);
