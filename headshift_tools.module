@@ -118,10 +118,13 @@ function headshift_tools_theme_user_picture_with_size($account, $size) {
  */
 function headshift_tools_flatten_array(array $array){
   $ret_array = array();
-  foreach(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)) as $value)
-   {
-     $ret_array[] = $value;
-   }
+  if (is_array($array))
+  {
+    foreach(new RecursiveIteratorIterator(new RecursiveArrayIterator($array)) as $value)
+    {
+      $ret_array[] = $value;
+    }
+  }
   return $ret_array;
 }
 
@@ -139,12 +142,15 @@ function str_replace_assoc($array,$string) {
     return str_replace($from_array,$to_array,$string);
 }
 
-function headshift_tools_time_created_ago($nid)
+function headshift_tools_time_created_ago($node)
 {
-  $node = node_load($nid);
-  return theme_date_time_ago(
-          date_create(date('Y-m-d', $node->created)),
-          date_create(date('Y-m-d')));
+  if (is_numeric($node))
+  {
+    $node = node_load($nid);
+  }
+  // Convert the created date into a DateTime object
+  $created_datetime = new DateTime("@{$node->created}");
+  return date_format_interval($created_datetime);
 }
 
 function headshift_tools_current_user_in_role($role) {
@@ -279,3 +285,69 @@ function headshift_tools_get_node_from_path($alias) {
   }
 }
 
+/**
+ * Retrieves the themed terms associated with a node, with the urls rewritten to the correct location
+ * according to the schema set in the urls array.
+ *
+ * @param <type> $node
+ * @param array $urls An array of items indexed by vocabulary id in the following format:
+ * array('url' => 'path/[name]', 'display' => TRUE)
+ * [name] will be replaced with the name of the term, [tid] with the tid for that term. 
+ * If display is set to false, then that vocabulary will not be returned
+ * @return array indexed by vid of array of links to terms associated with the given node
+ */
+function headshift_tools_rewrite_terms(&$node, $urls = array()) {
+  $nid = $node->nid;
+  $node_version_id = $node->vid;
+  $default_url = "taxonomy/[tid]";
+  
+  foreach($urls as $vid => $url) {
+    if (!is_array($url)) {
+      $urls[$vid]['url'] = $url;
+    }
+  }
+
+  // TODO - Improve this sql to exclude vids where $urls[$vid]['display'] == false
+  $sql = "SELECT
+    v.vid,
+    v.name vocabulary,
+    tn.tid,
+    td.name,
+    td.weight
+    FROM term_node tn
+    LEFT JOIN term_data td on td.tid = tn.tid
+    LEFT JOIN vocabulary v on v.vid = td.vid
+
+    WHERE
+    tn.nid = %d and
+    tn.vid = %d
+
+    ORDER BY td.weight,v.vid
+    ";
+  $result = db_query($sql, $nid, $node_version_id); 
+
+  while ($data=db_fetch_array($result)) {
+    $vid = $data['vid']; // create a shortcut, because this is used a lot
+
+    // create rename tokens for each of the column names in the data
+    foreach (array_keys($data) as $column_name) {
+      $replace['['.$column_name.']'] = $data[$column_name];
+    }
+    $url_template = (is_array($urls) && $urls[$vid]['url']) ? $urls[$vid]['url'] : $default_url;
+    $link = str_replace_assoc($replace, $url_template);
+    if ($urls[$vid]['query']) {
+      $query = str_replace_assoc($replace, $urls[$vid]['query']);
+    }
+
+    $class = 'vocabulary-' . $vid . ' term-' . $data['tid'];
+
+    $options = array(
+      'attributes' => array(
+        'class' => $class,
+        ),
+      'query' => $query,
+      );
+    $links[$vid][] = l($data['name'], $link, $options);
+  }
+  return $links;
+}
