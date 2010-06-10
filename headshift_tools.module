@@ -4,9 +4,9 @@ function headshift_tools_create_edit_link($node)
 {
 	$type = $node->type;
   global $user;
-  if (user_access("edit any $type content") 
+  if ($node->nid && (user_access("edit any $type content") 
       || (user_access("edit own $type content") && $user->uid == $node->uid)
-      || user_access('administer nodes'))
+      || user_access('administer nodes')))
   {
     return "<span class='edit'>" . l('edit', "node/" . $node->nid . "/edit", array('query' => "destination=node/". $node->nid)) . "</span>";
   }
@@ -16,9 +16,9 @@ function headshift_tools_create_delete_link($node)
 {
 	$type = $node->type;
   global $user;
-  if (user_access("delete any $type content") 
+  if ($node->nid && (user_access("delete any $type content") 
       || (user_access("delete own $type content") && $user->uid == $node->uid)
-      || user_access('administer nodes'))
+      || user_access('administer nodes')))
   {
     return "<span class='delete'>" . l('delete', "node/" . $node->nid . "/delete") . "</span>";
   }
@@ -163,6 +163,20 @@ function headshift_tools_user_in_role($uid, $role) {
     return in_array($role, array_values($user_to_check->roles));
     //echo $user_to_check->username . ($is_in_role ? "is" : "is not") . " a " . $role ;
 }
+
+// This is the suggested refactoring of headshift_tools_current_user_in_role and headshift_tools_user_in_role
+// function headshift_tools_user_in_role($role, $account) {
+//   if (is_null($account))
+//   {
+//     global $user;
+//     $account = $user;
+//   }
+//   else if (is_numeric($account))
+//   {
+//     $account = user_load(array('uid' => $account));
+//   }
+//   return in_array($role, array_values($account->roles));
+// }
 
 
 /**
