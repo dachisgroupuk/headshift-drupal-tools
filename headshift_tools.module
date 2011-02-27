@@ -116,7 +116,7 @@ function headshift_tools_theme_user_picture_with_size($account, $size) {
  * @return array
  *
  */
-function headshift_tools_flatten_array(array $array){
+function headshift_tools_flatten_array($array=array()){
   $ret_array = array();
   if (is_array($array))
   {
